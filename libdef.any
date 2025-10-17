@@ -1,0 +1,5 @@
+#include "../libdef.any"
+
+#if AMMR_VERSION_MAJOR < 4 
+#error "This model requires AMMR version 4.0 or higher"
+#endif

@@ -1,0 +1,16 @@
+#include "libdef.any"
+
+#define EVALUATE_JOINT_STRENGTH 1
+#define EVALUATE_JOINT_STRENGTH_NSTEP 40
+
+
+#define BM_TRUNK_CAVITY_MODEL OFF
+#define BM_ARM_LEFT OFF
+#define BM_ARM_RIGHT OFF
+#define BM_TRUNK_MUSCLES OFF
+#define BM_LEG_LEFT OFF
+
+Main =
+{
+  #include "<ANYBODY_HUMAN_MODEL>"
+};

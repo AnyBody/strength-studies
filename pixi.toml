@@ -1,0 +1,16 @@
+[workspace]
+authors = ["Morten Enemark Lund <mel@anybodytech.com>"]
+channels = ["https://prefix.dev/conda-forge", "anybody/label/rc82"]
+name = "strength-model"
+platforms = ["win-64"]
+version = "0.1.0"
+preview = ["pixi-build"]
+
+[tasks]
+
+[dependencies]
+anybodycon = ">=8.2.0beta7,<9"
+anypytools = {path="D:/repos/AnyPyTools"}
+python="3.14.*"
+polars = ">=1.34.0,<2"
+pyarrow = ">=21.0.0,<22"
