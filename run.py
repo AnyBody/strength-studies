@@ -4,6 +4,8 @@ from anypytools import AnyPyProcess
 import anypytools.macro_commands as mc
 import numpy as np
 
+
+# Maps the DOF name to its description/axis-label and sign convention compared to AMS
 dof_map = {
     "HipFlexion": ("Hip extension(-)/flexion(+)", 1),
     "HipAbduction": ("Hip abduction(-)/adduction(+)", -1),
@@ -29,7 +31,7 @@ study_map = {
     "SubTalarInversion": "Ankle inversion",
 }
 
-
+# This plan for the batch simulation defines for each study (key) which is the primary and secondary DOF (value)
 simulation_plan: dict[str, tuple[str, str]] = {
     "AnkleDorsiFlexion": ("AnklePlantarFlexion", "KneeFlexion"),
     "AnklePlantarFlexion": ("AnklePlantarFlexion", "KneeFlexion"),
@@ -46,30 +48,35 @@ simulation_plan: dict[str, tuple[str, str]] = {
 
 }
 
-
-
+# Define the range of motion for each study
 range_of_motion = {
-"AnkleDorsiFlexion": np.array([-20.0, 20.0]),
-"AnklePlantarFlexion": np.array([-20.0, 20.0]),
+"AnkleDorsiFlexion": np.array([30, -30]),
+"AnklePlantarFlexion": np.array([-30, 30]),
 "KneeFlexion": np.array([0, 160]),
 "KneeExtension": np.array([160, 0]),
 "SubTalarEversion": np.array([-20.0, 20.0]),
 "SubTalarInversion": np.array([-20.0, 20.0]),
-"HipAbduction": np.array([-20.0, 20.0]),
-"HipAdduction": np.array([-20.0, 20.0]),
-"HipExtension": np.array([-20.0, 20.0]),
-"HipFlexion": np.array([-20.0, 20.0]),
+"HipAbduction": np.array([-15, 40]),
+"HipAdduction": np.array([40, -15]),
+"HipExtension": np.array([130, -5]),
+"HipFlexion": np.array([-5, 130]),
 "HipExternalRotation": np.array([-20.0, 20.0]),
 "HipInternalRotation": np.array([-20.0, 20.0]),
 }
 
+# Define the range of motion for each study
+rom_secondary_dof = {
+"AnklePlantarFlexion": np.array([-30, 30]),
+"KneeFlexion": np.array([0, 160]),
+"HipFlexion": np.array([-5, 130]),
+}
 
 macros = []
 
 for study, (primary_dof, secondary_dof) in simulation_plan.items():
     rom_primary = range_of_motion[study]
     submacros = []
-    rom_secondary = np.linspace(*range_of_motion[secondary_dof], 40)
+    rom_secondary = np.linspace(*rom_secondary_dof[secondary_dof], 40)
     for secondary_val in rom_secondary:
         submacros.append([
             mc.Load("EvaluateJointStrength.main.any"),
@@ -81,19 +88,19 @@ for study, (primary_dof, secondary_dof) in simulation_plan.items():
 
             mc.Export(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.Study.Output.JointStrength.Abscissa.JointAngle", "measurePrimaryDoF"),
             mc.Export(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.Study.Output.JointStrength.JointStrength", "measureValue"),
-            mc.AddToOutput("measureObject", study_map[study]),
-            mc.AddToOutput("primaryDoF", dof_map[primary_dof][0]),
-            mc.AddToOutput("secondaryDoF", dof_map[secondary_dof][0]),
-            mc.AddToOutput("measureSecondDoF", secondary_val),
-            mc.AddToOutput("measureSecondDoFSign", dof_map[secondary_dof][1]),
-            mc.AddToOutput("measurePrimaryDoFSign", dof_map[primary_dof][1]),
+            mc.ExtendOutput("measureObject", study_map[study]),
+            mc.ExtendOutput("primaryDoF", dof_map[primary_dof][0]),
+            mc.ExtendOutput("secondaryDoF", dof_map[secondary_dof][0]),
+            mc.ExtendOutput("measureSecondDoF", secondary_val),
+            mc.ExtendOutput("measureSecondDoFSign", dof_map[secondary_dof][1]),
+            mc.ExtendOutput("measurePrimaryDoFSign", dof_map[primary_dof][1]),
         ])
     macros.extend(submacros)
 
 app = AnyPyProcess(num_processes=5)
-results = app.start_macro(macros[0:3])
+results = app.start_macro(macros)
 
-df_pandas = results.to_dataframe(index_var="measurePrimaryDoF", exclude_task_info=True)
+df_pandas = results.to_dataframe(index_var="measurePrimaryDoF")
 
 # Change signs of variables which are opposite to the AnyBody convention
 df = pl.from_pandas(df_pandas).with_columns(
@@ -101,6 +108,6 @@ df = pl.from_pandas(df_pandas).with_columns(
     pl.col("measurePrimaryDoF")*pl.col("measurePrimaryDoFSign").alias("measurePrimaryDoF"),
 ).drop(["measureSecondDoFSign", "measurePrimaryDoFSign"])
 
-# df.to_parquet("joint_strength_results.parquet")
+df.write_parquet("joint_strength_results.parquet")
 
 print(df)
