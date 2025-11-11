@@ -3,6 +3,27 @@
 #define EVALUATE_JOINT_STRENGTH 1
 #define EVALUATE_JOINT_STRENGTH_NSTEP 40
 
+#ifndef MUSCLE_TYPE 
+// "Simple", "3E_1Par", "3E_2Par", "3E_Experimental"
+#define MUSCLE_TYPE "Simple"
+#endif
+
+#if MUSCLE_TYPE == "Simple"
+  #define BM_LEG_MUSCLES_RIGHT _MUSCLES_SIMPLE_
+#endif
+#if MUSCLE_TYPE == "3E_1Par"
+  #define BM_LEG_MUSCLES_RIGHT _MUSCLES_3E_HILL_
+  #define BM_CALIBRATION_TYPE _CALIBRATION_TYPE_1PAR_
+#endif
+#if MUSCLE_TYPE == "3E_2Par"
+  #define BM_LEG_MUSCLES_RIGHT _MUSCLES_3E_HILL_
+  #define BM_CALIBRATION_TYPE _CALIBRATION_TYPE_2PAR_
+#endif
+#if MUSCLE_TYPE == "3E_Experimental"
+  #define BM_LEG_MUSCLES_RIGHT _EXPERIMENTAL_CALIBRATION_TYPE_2PAR_
+  #define BM_CALIBRATION_TYPE _CALIBRATION_TYPE_2PAR_
+#endif
+
 
 #define BM_TRUNK_CAVITY_MODEL OFF
 #define BM_ARM_LEFT OFF
@@ -10,7 +31,13 @@
 #define BM_TRUNK_MUSCLES OFF
 #define BM_LEG_LEFT OFF
 
+
+
 Main =
 {
+  
   #include "<ANYBODY_HUMAN_MODEL>"
+  
+  AnyString MuscleType = MUSCLE_TYPE;
+  
 };

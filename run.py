@@ -71,31 +71,53 @@ rom_secondary_dof = {
 "HipFlexion": np.array([-5, 130]),
 }
 
+
+MUSCLE_TYPES = ["Simple", "3E_1Par", "Strong3E_2Par", "3E_Experimental"]
+
+## Save calibration files for all muscle models
+calibration_macros = []
+for muscle_type in MUSCLE_TYPES:
+    calibration_macros.extend([
+        mc.Load("EvaluateJointStrength.main.any"),
+        mc.OperationRun("Main.HumanModel.Calibration.CalibrationSequence"),
+        mc.SaveValues(f"{muscle_type}_calibration.anyset")
+    ])
+app = AnyPyProcess(num_processes=4)
+results = app.start_macro(calibration_macros)
+assert all("ERROR" not in results)
+
+
+
 macros = []
 
-for study, (primary_dof, secondary_dof) in simulation_plan.items():
-    rom_primary = range_of_motion[study]
-    submacros = []
-    rom_secondary = np.linspace(*rom_secondary_dof[secondary_dof], 40)
-    for secondary_val in rom_secondary:
-        submacros.append([
-            mc.Load("EvaluateJointStrength.main.any"),
-            # Set parameters for easier output
-
-            mc.SetValue(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.RangeOfMotion", rom_primary ),
-            mc.SetValue(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.{secondary_dof}", secondary_val),
-            mc.OperationRun(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.Study.InverseDynamics"),
-
-            mc.Export(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.Study.Output.JointStrength.Abscissa.JointAngle", "measurePrimaryDoF"),
-            mc.Export(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.Study.Output.JointStrength.JointStrength", "measureValue"),
-            mc.ExtendOutput("measureObject", study_map[study]),
-            mc.ExtendOutput("primaryDoF", dof_map[primary_dof][0]),
-            mc.ExtendOutput("secondaryDoF", dof_map[secondary_dof][0]),
-            mc.ExtendOutput("measureSecondDoF", secondary_val),
-            mc.ExtendOutput("measureSecondDoFSign", dof_map[secondary_dof][1]),
-            mc.ExtendOutput("measurePrimaryDoFSign", dof_map[primary_dof][1]),
-        ])
-    macros.extend(submacros)
+for muscle_type in MUSCLE_TYPES:
+    for study, (primary_dof, secondary_dof) in simulation_plan.items():
+        rom_primary = range_of_motion[study]
+        submacros = []
+        rom_secondary = np.linspace(*rom_secondary_dof[secondary_dof], 40)
+        for secondary_val in rom_secondary:
+            submacros.append([
+                mc.Load("EvaluateJointStrength.main.any"),
+                # Load the calibration for the given muscle model
+                mc.LoadValues(f"{muscle_type}_calibration.anyset"),
+                mc.UpdateValues(),
+                # Set parameters for easier output
+                mc.SetValue(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.RangeOfMotion", rom_primary ),
+                mc.SetValue(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.{secondary_dof}", secondary_val),
+                # Run the inverse dynamics study
+                mc.OperationRun(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.Study.InverseDynamics"),
+                # Export results
+                mc.Export(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.Study.Output.JointStrength.Abscissa.JointAngle", "measurePrimaryDoF"),
+                mc.Export(f"Main.HumanModel.EvaluateJointStrength.Right.Leg.{study}.Study.Output.JointStrength.JointStrength", "measureValue"),
+                mc.ExtendOutput("AnyBodyMuscleType", muscle_type),
+                mc.ExtendOutput("measureObject", study_map[study]),
+                mc.ExtendOutput("primaryDoF", dof_map[primary_dof][0]),
+                mc.ExtendOutput("secondaryDoF", dof_map[secondary_dof][0]),
+                mc.ExtendOutput("measureSecondDoF", secondary_val),
+                mc.ExtendOutput("measureSecondDoFSign", dof_map[secondary_dof][1]),
+                mc.ExtendOutput("measurePrimaryDoFSign", dof_map[primary_dof][1]),
+            ])
+        macros.extend(submacros)
 
 app = AnyPyProcess(num_processes=5)
 results = app.start_macro(macros)
