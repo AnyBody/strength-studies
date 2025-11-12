@@ -39,5 +39,8 @@ Main =
   #include "<ANYBODY_HUMAN_MODEL>"
   
   AnyString MuscleType = MUSCLE_TYPE;
+  AnyString AMMRGitBranch = Main.HumanModel.Config._AMMR_BETA_INFO_.GitInfo[0];
+  AnyString AMMRGitHash = Main.HumanModel.Config._AMMR_BETA_INFO_.GitInfo[1];
+  AnyString AnyBodyVersion = strval(ANYBODY_V1) + "." + strval(ANYBODY_V2) + "." + strval(ANYBODY_V3) + "." + strval(ANYBODY_V4) ;
   
 };

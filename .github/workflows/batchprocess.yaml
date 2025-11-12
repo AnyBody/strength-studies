@@ -1,0 +1,88 @@
+name: batch-process-joint-strength
+
+on:
+  workflow_dispatch: {}
+
+
+jobs:
+  batch-process:
+    strategy:
+      fail-fast: false
+      matrix:
+        batch_group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    runs-on: windows-2025
+
+    
+    env:
+      RLM_LICENSE: ${{ secrets.TEST_LICENSE_SERVER }}
+      RLM_LICENSE_PASSWORD: ${{ secrets.TEST_LICENSE_PASSWORD }}
+
+    steps:
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          path: repo
+
+      - uses: actions/checkout@v5
+        name: Checkout AMMR4
+        with:
+          repository: anybody/ammr4-beta
+          ref: ammr4-beta
+          path: ammr4
+
+      - name: Link AMMR
+        run: | 
+          Set-Content -Path "libdef.any" -Value "#include ""$env:GITHUB_WORKSPACE/ammr4/libdef.any"""
+
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          cache-write: ${{ github.ref_name == 'master' }}
+          manifest-path: repo/pixi.toml
+          activate-environment: true
+        
+                    
+      - name: Run batch
+        run: |
+          cd repo
+          python repo/run.py batch-process --batch ${{ matrix.batch_group }} --num-batches 20 
+        env:
+          RLM_LICENSE: ${{ secrets.LICENSE_SERVER }}
+          RLM_LICENSE_PASSWORD: ${{ secrets.LICENSE_PASSWORD }}
+
+
+      - name: Upload batch results
+        uses: actions/upload-artifact@v5
+        with:
+          name: joint-strength-${{ matrix.batch_group }}
+          path: | 
+            repo\joint_strength_*.parquet
+          retention-days: 1
+
+
+  combine-joint-strength:
+    runs-on: ubuntu-latest
+    needs: [batch-process]
+
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Download artifacts
+        uses: actions/download-artifact@v6
+
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          activate-environment: true
+        
+
+      - name: Combine joint-strength
+        run: python run.py combine-parquet-files --input-pattern "joint_strength_*.parquet" --output joint-strength.parquet
+      
+      - name: Upload combined joint-strength
+        uses: actions/upload-artifact@v5
+        with:
+          name: joint-strength-full
+          path: | 
+            joint-strength.parquet
+          retention-days: 30
