@@ -138,11 +138,12 @@ def batch_process(batch: int|None = None, num_batches: int|None = None):
     If batch and num_batches are provided, only the given batch is processed.
     """
 
-    # app = AnyPyProcess()
-    # cal_macros = generate_muscle_calibration_macros()
-    # print("Running calibration macros...")
-    # results = app.start_macro(cal_macros)
-    # assert "ERROR" not in results, f"Failed with: {results['ERROR']}"
+    app = AnyPyProcess()
+    cal_macros = generate_muscle_calibration_macros()
+    print("Running calibration macros...")
+    results = app.start_macro(cal_macros)
+    for res in results:
+        assert "ERROR" not in res, f"Failed with: {res['ERROR']}"
 
     macros = generate_muscle_simulation_macros()
 
@@ -156,7 +157,9 @@ def batch_process(batch: int|None = None, num_batches: int|None = None):
     app = AnyPyProcess(num_processes=5)
     print("Running strength evaluation macros...")
     results = app.start_macro(macros)
-    assert "ERROR" not in results, f"Failed with: {results['ERROR']}"
+
+    for res in results:
+        assert "ERROR" not in res, f"Failed with: {res['ERROR']}"
 
     df_pandas = results.to_dataframe(index_var="measurePrimaryDoF")
 
