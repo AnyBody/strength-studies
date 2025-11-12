@@ -134,6 +134,9 @@ def generate_muscle_simulation_macros()-> list[list[mc.MacroCommand]]:
 
 @app.command()
 def batch_process(batch: int|None = None, num_batches: int|None = None):
+    """ Run the joint strength evaluation in batches.
+    If batch and num_batches are provided, only the given batch is processed.
+    """
 
     # app = AnyPyProcess()
     # cal_macros = generate_muscle_calibration_macros()
