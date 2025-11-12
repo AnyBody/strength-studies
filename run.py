@@ -183,7 +183,7 @@ def cleanup_parquet_files():
 @app.command()
 def combine_parquet_files(input_pattern: str = "joint_strength_*.parquet", output: str = "joint_strength.parquet"):
     # concatenate all parquet files file
-    pl.scan_parquet(input_pattern).sink_parquet(output)
+    pl.read_parquet(input_pattern).write_parquet(output)
 
 
 if __name__ == "__main__":

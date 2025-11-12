@@ -77,12 +77,15 @@ jobs:
         
 
       - name: Combine joint-strength
-        run: python run.py combine-parquet-files --input-pattern "joint_strength_*.parquet" --output joint-strength.parquet
+        run: |
+            python run.py combine-parquet-files \
+                --input-pattern="joint-strength-*/*.parquet" \
+                --output="joint-strength-full.parquet"
       
       - name: Upload combined joint-strength
         uses: actions/upload-artifact@v5
         with:
           name: joint-strength-full
           path: | 
-            joint-strength.parquet
+            joint-strength-full.parquet
           retention-days: 30
