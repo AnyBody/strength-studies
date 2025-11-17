@@ -81,18 +81,22 @@ secondary_dof_rom_values = {
 MUSCLE_TYPES = ["Simple", "3E_1Par", "Strong3E_2Par", "3E_Experimental"]
 
 
-def generate_muscle_calibration_macros() -> list[list[mc.MacroCommand]]:
-    ## Save calibration files for all muscle models
-    calibration_macros = []
-    for muscle_type in MUSCLE_TYPES:
-        calibration_macros.append([
-            mc.Load("EvaluateJointStrength.main.any"),
+def run_calibration():
+    """ Run calibration for all muscle models and save the calibration files."""
+
+    calibration_macros = [
+        [
+            mc.Load("EvaluateJointStrength.main.any", defs={"MUSCLE_TYPE": f'"{muscle_type}"'}),
             mc.OperationRun("Main.HumanModel.Calibration.CalibrationSequence"),
             mc.SaveValues(f"{muscle_type}_calibration.anyset")
-        ])
-    return calibration_macros
-
-
+        ]
+        for muscle_type in MUSCLE_TYPES
+    ]
+    app = AnyPyProcess()
+    print("Running calibration macros...")
+    results = app.start_macro(calibration_macros)
+    for res in results:
+        assert "ERROR" not in res, f"Failed with: {res['ERROR']}"
 
 
 def generate_muscle_simulation_macros()-> list[list[mc.MacroCommand]]:
@@ -104,7 +108,7 @@ def generate_muscle_simulation_macros()-> list[list[mc.MacroCommand]]:
             submacros = []
             for secondary_val in secondary_dof_rom_values[secondary_dof]:
                 submacros.append([
-                    mc.Load("EvaluateJointStrength.main.any"),
+                    mc.Load("EvaluateJointStrength.main.any", defs={"MUSCLE_TYPE": f'"{muscle_type}"'}),
                     # Load the calibration for the given muscle model
                     mc.LoadValues(f"{muscle_type}_calibration.anyset"),
                     mc.UpdateValues(),
@@ -131,27 +135,51 @@ def generate_muscle_simulation_macros()-> list[list[mc.MacroCommand]]:
             macros.extend(submacros)
     return macros
 
+
+def distribute_batches(items: list, batch: int, num_batches: int) -> list:
+    """Distribute items across batches, returning items for the specified batch.
+    
+    Args:
+        items: List of items to distribute
+        batch: The batch number (1-indexed)
+        num_batches: Total number of batches
+        
+    Returns:
+        Subset of items for the specified batch
+    """
+    total_items = len(items)
+    batch_size = total_items // num_batches
+    remainder = total_items % num_batches
+    
+    # Calculate start and end indices for this batch
+    # Give extra items to first 'remainder' batches
+    if batch <= remainder:
+        start_idx = (batch - 1) * (batch_size + 1)
+        end_idx = start_idx + batch_size + 1
+    else:
+        start_idx = remainder * (batch_size + 1) + (batch - remainder - 1) * batch_size
+        end_idx = start_idx + batch_size
+    
+    return items[start_idx:end_idx]
+
+
+
+
+
 @app.command()
 def batch_process(batch: int|None = None, num_batches: int|None = None):
     """ Run the joint strength evaluation in batches.
     If batch and num_batches are provided, only the given batch is processed.
     """
 
-    app = AnyPyProcess()
-    cal_macros = generate_muscle_calibration_macros()
-    print("Running calibration macros...")
-    results = app.start_macro(cal_macros)
-    for res in results:
-        assert "ERROR" not in res, f"Failed with: {res['ERROR']}"
+    run_calibration()
 
     macros = generate_muscle_simulation_macros()
 
     if num_batches and num_batches > len(macros):
         raise ValueError("number_of_batches is larger than the number of macros")
-
     if batch is not None and num_batches:
-        batch_len = (len(macros) + num_batches - 1) // num_batches
-        macros = list(list(itertools.batched(macros, batch_len))[batch-1])
+        macros = distribute_batches(macros, batch, num_batches)
 
     app = AnyPyProcess(num_processes=5)
     print("Running strength evaluation macros...")
