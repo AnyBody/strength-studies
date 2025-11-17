@@ -70,15 +70,15 @@ range_of_motion = {
 "HipInternalRotation": np.array([-20.0, 20.0]),
 }
 
-# Define the second  range of motion for each study
+# Define the second range of motion for each study
 secondary_dof_rom_values = {
-"AnklePlantarFlexion": np.array([-20, 0, 20]),
-"KneeFlexion": np.array([0, 70, 160]),
-"HipFlexion": np.array([-5, 0, 60, 130]),
+"AnklePlantarFlexion": np.array([-20, -10, 0,  10, 20]),
+"KneeFlexion": np.array([0, 45, 90, 160]),
+"HipFlexion": np.array([-10, 0, 45, 90, 130]),
 }
 
 
-MUSCLE_TYPES = ["Simple", "3E_1Par", "Strong3E_2Par", "3E_Experimental"]
+MUSCLE_TYPES = ["Simple", "3E_1Par", "3E_2Par", "3E_Experimental"]
 
 
 def run_calibration():
