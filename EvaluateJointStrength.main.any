@@ -5,7 +5,7 @@
 
 #ifndef MUSCLE_TYPE 
 // "Simple", "3E_1Par", "3E_2Par", "3E_Experimental"
-#define MUSCLE_TYPE "Simple"
+#define MUSCLE_TYPE "3E_Experimental"
 #endif
 
 #if MUSCLE_TYPE == "Simple"
@@ -20,8 +20,8 @@
   #define BM_CALIBRATION_TYPE _CALIBRATION_TYPE_2PAR_
 #endif
 #if MUSCLE_TYPE == "3E_Experimental"
-  #define BM_LEG_MUSCLES_RIGHT _EXPERIMENTAL_CALIBRATION_TYPE_2PAR_
-  #define BM_CALIBRATION_TYPE _CALIBRATION_TYPE_2PAR_
+  #define BM_LEG_MUSCLES_RIGHT _MUSCLES_3E_HILL_
+  #define BM_CALIBRATION_TYPE _EXPERIMENTAL_CALIBRATION_TYPE_2PAR_
 #endif
 
 
