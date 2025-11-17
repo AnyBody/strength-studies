@@ -70,11 +70,11 @@ range_of_motion = {
 "HipInternalRotation": np.array([-20.0, 20.0]),
 }
 
-# Define the range of motion for each study
-rom_secondary_dof = {
-"AnklePlantarFlexion": np.array([-30, 30]),
-"KneeFlexion": np.array([0, 160]),
-"HipFlexion": np.array([-5, 130]),
+# Define the second  range of motion for each study
+secondary_dof_rom_values = {
+"AnklePlantarFlexion": np.array([-20, 0, 20]),
+"KneeFlexion": np.array([0, 70, 160]),
+"HipFlexion": np.array([-5, 0, 60, 130]),
 }
 
 
@@ -102,8 +102,7 @@ def generate_muscle_simulation_macros()-> list[list[mc.MacroCommand]]:
         for muscle_type in MUSCLE_TYPES:
             rom_primary = range_of_motion[study]
             submacros = []
-            rom_secondary = np.linspace(*rom_secondary_dof[secondary_dof], 40)
-            for secondary_val in rom_secondary:
+            for secondary_val in secondary_dof_rom_values[secondary_dof]:
                 submacros.append([
                     mc.Load("EvaluateJointStrength.main.any"),
                     # Load the calibration for the given muscle model
