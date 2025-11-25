@@ -89,3 +89,17 @@ jobs:
           path: | 
             joint-strength-full.parquet
           retention-days: 30
+
+      - name: "Set current date/time as output variable"
+        shell: pwsh
+        run: |
+          echo "date=$(Get-Date -Format 'yyyy-MM-dd')" >> $env:GITHUB_OUTPUT
+          echo "time=$(Get-Date -Format 'HH.mm.ss')" >> $env:GITHUB_OUTPUT
+        id: datetime  
+
+      - uses: fixpoint/azblob-upload-artifact@28465b0de5b59246e7436956f8af0d7585d0b8e4 # v4.8
+        with:
+          connection-string: ${{ secrets.AZURE_ANYBODY_CLOUD_CI_CONNECTION_STRING }}
+          container: strength-data
+          name: joint-strength_${{ steps.datetime.outputs.date }}-${{ github.run_id }}.parquet
+          path: joint-strength-full.parquet
