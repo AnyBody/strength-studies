@@ -90,16 +90,17 @@ jobs:
             joint-strength-full.parquet
           retention-days: 30
 
-      - name: "Set current date/time as output variable"
+      - name: "Rename parquet file for upload to Azure Blob Storage"
         shell: pwsh
         run: |
-          echo "date=$(Get-Date -Format 'yyyy-MM-dd')" >> $env:GITHUB_OUTPUT
-          echo "time=$(Get-Date -Format 'HH.mm.ss')" >> $env:GITHUB_OUTPUT
-        id: datetime  
+          mv joint-strength-full.parquet joint-strength_$(Get-Date -Format 'yyyy-MM-dd')-${{ github.run_id }}.parquet
 
-      - uses: fixpoint/azblob-upload-artifact@28465b0de5b59246e7436956f8af0d7585d0b8e4 # v4.8
+          
+      - uses: bacongobbler/azure-blob-storage-upload@a7f1705d5d3796a387d18cae8e6864ae3d021bda
         with:
-          connection-string: ${{ secrets.AZURE_ANYBODY_CLOUD_CI_CONNECTION_STRING }}
-          container: strength-data
-          name: joint-strength_${{ steps.datetime.outputs.date }}-${{ github.run_id }}.parquet
-          path: joint-strength-full.parquet
+          source_dir: .
+          container_name: strength-data
+          connection_string: ${{ secrets.AZURE_ANYBODY_CLOUD_CI_CONNECTION_STRING }}
+          extra_args: '--pattern joint-strength_*.parquet'
+          # WARNING: this will overwrite existing blobs in your blob storage
+          overwrite: 'true'
