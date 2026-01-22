@@ -34,14 +34,16 @@ def _(pl):
     }
 
 
-    def get_data():
-        df = pl.scan_parquet(
-            source + f"*.parquet", storage_options=storage_options, include_file_paths="file"
-        ).filter(pl.col("file") == pl.col("file").max())
-        return df.collect()
+    # def get_data():
+    #     df = pl.scan_parquet(
+    #         source + f"*.parquet", storage_options=storage_options, include_file_paths="file"
+    #     ).filter(pl.col("file") == pl.col("file").max())
+    #     return df.collect()
 
 
-    df_full = get_data()
+    # df_full = get_data()
+    df_full = pd.read_parquet("joint-strength-full.parquet")
+
     # df_full
     return (df_full,)
 
