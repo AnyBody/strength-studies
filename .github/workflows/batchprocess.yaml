@@ -2,6 +2,8 @@ name: batch-process-joint-strength
 
 on:
   workflow_dispatch: {}
+  schedule:
+    - cron: '0 2 * * 1'
 
 
 jobs:
